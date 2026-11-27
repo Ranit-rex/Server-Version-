@@ -69,7 +69,7 @@ exports.versionApi = onRequest(
       return send(res, 405, { ok: false, error: "Method not allowed" });
     }
 
-    const path = req.path.replace(/\\/+$/, "") || "/";
+    const path = req.path.replace(/\/+$/, "") || "/";
     if (path === "/health") {
       return send(res, 200, { ok: true, service: "castdoo-version-api" });
     }
