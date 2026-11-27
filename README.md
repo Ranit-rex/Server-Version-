@@ -1,22 +1,24 @@
 # CastDoo Server Version
 
-Firebase Cloud Functions HTTP API for CastDoo version policies. MongoDB Atlas remains the source of truth. This service does not depend on Cloudflare or Render.
+Cloudflare Workers HTTP API with MongoDB Atlas as the source of truth. No Firebase Functions or Render service is used for version checks.
 
-## Endpoints
+## API routes
 
-After deployment, Firebase provides the function URL:
 - `GET /health`
 - `GET /v1/version` (Stable)
 - `GET /v1/version?track=beta` (Beta)
 
-The API is read-only. It does not accept policy writes or expose database credentials.
+The API is read-only and uses a dedicated MongoDB read-only account. MongoDB connection details are stored as a Cloudflare Worker secret, never in this repository.
 
-## MongoDB policy documents
+## MongoDB Atlas
 
-Database: `castdoo`  
-Collection: `version_policies`
+- Project: `CastDoo Version System`
+- Cluster: `CastDooVersion` (AWS Mumbai / `AP_SOUTH_1`, Free tier)
+- Database: `castdoo_versions`
+- Collection: `version_policies`
+- Document IDs: `stable` and `beta`
 
-Stable document example:
+Example Stable document:
 
 ```json
 {
@@ -31,35 +33,26 @@ Stable document example:
 }
 ```
 
-Create a corresponding document with `_id: "beta"` for the Beta track. Compare integer version codes, not version-name strings.
+Create the equivalent Beta document with `_id: "beta"`. Use integer version codes. `releaseType` must be `major` or `mini`.
 
-## Configure and deploy
+## Cloudflare deployment
 
-1. Install Firebase CLI and sign in with an account that has access to Firebase project `castdoo`.
-2. From this repository directory, run `cd functions && npm install && cd ..`.
-3. Create a dedicated MongoDB database user with read-only access to the policy collection.
-4. Set the secret (the value is your Atlas connection string):
-   `firebase functions:secrets:set MONGODB_URI --project castdoo`
-5. Deploy:
-   `firebase deploy --only functions:versionApi --project castdoo`
-6. Test the deployed `/health`, `/v1/version`, and `/v1/version?track=beta` URLs.
+Worker name: `castdoo-version-api`
 
-Optional function environment values:
-- `MONGODB_DB` (default `castdoo`)
-- `VERSION_COLLECTION` (default `version_policies`)
+Secret required:
+- `MONGODB_URI`: Atlas connection string for the dedicated read-only user.
 
-Firebase Functions deployment may require the Firebase project to be on the Blaze billing plan. The function is configured in `asia-south1`, with no minimum instances and a maximum of five instances.
+The database and collection are configured in `wrangler.jsonc`. The Worker supports GET and OPTIONS only. It validates policy data and never exposes MongoDB errors or credentials.
 
 ## Client behavior contract
 
 - Load cached policy immediately when the app opens.
 - Make at most one successful version check per local day.
-- A failed check must not count as the daily successful check.
+- A failed check does not count as the daily successful check.
 - Save only a valid successful policy response.
 - Keep using cached policy while offline or when the API is unavailable.
-- Enforce a cached mandatory update immediately.
 - Compare installed and remote versions using integer version codes.
 - Keep Stable and Beta policies separate.
 - Major updates are mandatory; Mini updates are optional, with Update and Continue choices.
 
-This repository contains the server API only. It does not modify the CastDoo Android app or any existing Render services.
+This repository contains the server API only. It does not modify the CastDoo Android app or existing Render services.
