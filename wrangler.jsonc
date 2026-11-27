@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "castdoo-version-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": {
+    "MONGODB_DB": "castdoo_versions",
+    "VERSION_COLLECTION": "version_policies"
+  }
+}
