@@ -111,7 +111,7 @@ export default {
         updateUrl: String(input.updateUrl || "").slice(0, 2048),
         updatedAt: new Date()
       };
-      if (policy.updateUrl && !/^https:\\/\\//i.test(policy.updateUrl)) {
+      if (policy.updateUrl && !policy.updateUrl.toLowerCase().startsWith("https://")) {
         return json({ ok: false, error: "updateUrl must be an HTTPS URL" }, 400);
       }
 
