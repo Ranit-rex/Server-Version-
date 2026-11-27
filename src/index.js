@@ -74,7 +74,7 @@ async function withCollection(env, callback) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const path = url.pathname.replace(/\\/+$/, "") || "/";
+    const path = url.pathname.replace(/\/+$/, "") || "/";
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: JSON_HEADERS });
